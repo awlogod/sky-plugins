@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { createPreference } from '@/lib/mercadopago';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 
 type PaymentMethod = 'credit' | 'pix' | 'mercadopago' | 'boleto' | 'scoins';
 
@@ -73,6 +74,7 @@ const paymentOptions: PaymentOption[] = [
 export default function CheckoutPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { cartItems } = useCart();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [showCreditCardForm, setShowCreditCardForm] = useState(false);
   const [showPixForm, setShowPixForm] = useState(false);
@@ -92,23 +94,6 @@ export default function CheckoutPage() {
   const [showQrCode, setShowQrCode] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [cartItems, setCartItems] = useState([
-    {
-      id: '1',
-      name: 'Plugin SkyPvP',
-      type: 'plugin',
-      price: 29.90,
-      quantity: 1
-    },
-    {
-      id: '2',
-      name: 'Servidor SkyWars',
-      type: 'server',
-      price: 99.90,
-      quantity: 1
-    }
-  ]);
-
   useEffect(() => {
     // Verifica se o usuário está logado
     if (!user) {
@@ -116,11 +101,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Carrega itens do carrinho
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
-    }
     setIsLoading(false);
   }, [user, router]);
 

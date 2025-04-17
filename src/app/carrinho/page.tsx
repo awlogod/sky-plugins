@@ -1,54 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-
-interface CartItem {
-  id: string;
-  name: string;
-  type: 'plugin' | 'server';
-  price: number;
-  quantity: number;
-}
+import { useCart } from '@/contexts/CartContext';
 
 export default function CarrinhoPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Carrega itens do localStorage
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
-    }
-    setIsLoading(false);
-  }, []);
-
-  const removeItem = (id: string) => {
-    const updatedCart = cartItems.filter(item => item.id !== id);
-    setCartItems(updatedCart);
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
-  };
-
-  const updateQuantity = (id: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    const updatedCart = cartItems.map(item =>
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    );
-    setCartItems(updatedCart);
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
-  };
+  const { cartItems, removeFromCart, updateQuantity } = useCart();
 
   const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-minecraft-light to-minecraft-green/10">
-        <div className="text-2xl font-minecraft text-minecraft-green animate-pulse">Carregando...</div>
-      </div>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-minecraft-light to-minecraft-green/10 py-16">
@@ -139,7 +98,7 @@ export default function CarrinhoPage() {
                             </p>
                           </div>
                           <button
-                            onClick={() => removeItem(item.id)}
+                            onClick={() => removeFromCart(item.id)}
                             className="text-red-500 hover:text-red-700"
                           >
                             Remover
