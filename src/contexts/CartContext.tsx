@@ -34,9 +34,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Salva itens no localStorage quando o carrinho muda
     localStorage.setItem('cart', JSON.stringify(cartItems));
+    console.log('Carrinho atualizado:', cartItems);
   }, [cartItems]);
 
   const addToCart = (item: Omit<CartItem, 'quantity'>) => {
+    console.log('Adicionando ao carrinho:', item);
     setCartItems(prevItems => {
       const existingItem = prevItems.find(i => i.id === item.id);
       if (existingItem) {

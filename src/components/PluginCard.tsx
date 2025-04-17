@@ -6,7 +6,7 @@ import { Plugin } from '@/types/plugin';
 
 interface PluginCardProps {
   plugin: Plugin;
-  onAddToCart: () => void;
+  onAddToCart: (plugin: Plugin) => void;
 }
 
 export default function PluginCard({ plugin, onAddToCart }: PluginCardProps) {
@@ -25,7 +25,7 @@ export default function PluginCard({ plugin, onAddToCart }: PluginCardProps) {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={onAddToCart}
+            onClick={() => onAddToCart(plugin)}
             className="px-4 py-2 bg-minecraft-green text-white rounded-lg hover:bg-minecraft-green/90 transition-colors"
           >
             Adicionar ao Carrinho

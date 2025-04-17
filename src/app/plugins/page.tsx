@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
 import PluginCard from '@/components/PluginCard';
 import { plugins } from '@/data/plugins';
+import { Plugin } from '@/types/plugin';
 
 export default function PluginsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -14,7 +15,7 @@ export default function PluginsPage() {
     ? plugins
     : plugins.filter(plugin => plugin.category === selectedCategory);
 
-  const handleAddToCart = (plugin: typeof plugins[0]) => {
+  const handleAddToCart = (plugin: Plugin) => {
     addToCart({
       id: plugin.id.toString(),
       name: plugin.name,
@@ -61,7 +62,7 @@ export default function PluginsPage() {
           <PluginCard
             key={plugin.id}
             plugin={plugin}
-            onAddToCart={() => handleAddToCart(plugin)}
+            onAddToCart={handleAddToCart}
           />
         ))}
       </motion.div>
