@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { createPreference } from '@/lib/mercadopago';
+import { useAuth } from '@/contexts/AuthContext';
 
 type PaymentMethod = 'credit' | 'pix' | 'mercadopago' | 'boleto' | 'scoins';
 
@@ -71,10 +72,11 @@ const paymentOptions: PaymentOption[] = [
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [showCreditCardForm, setShowCreditCardForm] = useState(false);
   const [showPixForm, setShowPixForm] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [creditCardForm, setCreditCardForm] = useState<CreditCardForm>({
     number: '',
     name: '',
@@ -87,8 +89,10 @@ export default function CheckoutPage() {
     cpf: '',
     qrCode: undefined
   });
+  const [showQrCode, setShowQrCode] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [cartItems] = useState([
+  const [cartItems, setCartItems] = useState([
     {
       id: '1',
       name: 'Plugin SkyPvP',
@@ -105,6 +109,21 @@ export default function CheckoutPage() {
     }
   ]);
 
+  useEffect(() => {
+    // Verifica se o usuário está logado
+    if (!user) {
+      router.push('/auth');
+      return;
+    }
+
+    // Carrega itens do carrinho
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      setCartItems(JSON.parse(savedCart));
+    }
+    setIsLoading(false);
+  }, [user, router]);
+
   const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   const discount = selectedMethod === 'pix' ? subtotal * 0.05 : 0;
   const total = subtotal - discount;
@@ -114,6 +133,8 @@ export default function CheckoutPage() {
     setSelectedMethod(method);
     setShowCreditCardForm(method === 'credit');
     setShowPixForm(method === 'pix');
+    setShowQrCode(false);
+    setError(null);
 
     if (method === 'mercadopago') {
       setIsLoading(true);
@@ -179,6 +200,7 @@ export default function CheckoutPage() {
     // Aqui você geraria o QR Code real com os dados do pagamento
     const mockQRCode = `00020126580014BR.GOV.BCB.PIX0136123e4567-e89b-12d3-a456-4266141740005204000053039865405${total.toFixed(2)}5802BR5913SKY PLUGINS LTDA6008BRASILIA62070503***6304E2CA`;
     setPixForm(prev => ({ ...prev, qrCode: mockQRCode }));
+    setShowQrCode(true);
   };
 
   const handleSubmit = () => {
@@ -205,6 +227,46 @@ export default function CheckoutPage() {
     );
   };
 
+  const validatePixForm = () => {
+    if (!pixForm.name.trim()) {
+      setError('Por favor, informe seu nome completo');
+      return false;
+    }
+    if (!pixForm.cpf.trim() || pixForm.cpf.length !== 11) {
+      setError('Por favor, informe um CPF válido');
+      return false;
+    }
+    return true;
+  };
+
+  const handlePayment = async () => {
+    if (cartItems.length === 0) {
+      setError('Seu carrinho está vazio');
+      return;
+    }
+
+    if (selectedMethod === 'pix') {
+      if (!validatePixForm()) return;
+      generatePixQRCode();
+    } else {
+      try {
+        // Aqui você faria a integração com o Mercado Pago
+        // Por enquanto, vamos simular um redirecionamento
+        router.push('/pagamento/pendente');
+      } catch (error) {
+        setError('Erro ao processar pagamento. Tente novamente.');
+      }
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-minecraft-light to-minecraft-green/10">
+        <div className="text-2xl font-minecraft text-minecraft-green animate-pulse">Carregando...</div>
+      </div>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-minecraft-light to-minecraft-green/10 py-16">
       <div className="container mx-auto px-4">
@@ -227,6 +289,16 @@ export default function CheckoutPage() {
               Voltar ao Carrinho
             </Link>
           </div>
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg"
+            >
+              {error}
+            </motion.div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Resumo do Pedido */}
@@ -400,83 +472,85 @@ export default function CheckoutPage() {
                 )}
 
                 {/* Formulário do PIX */}
-                {showPixForm && (
+                {showPixForm && !showQrCode && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                     className="mt-8 space-y-4"
                   >
-                    {!pixForm.qrCode ? (
-                      <>
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Nome Completo
-                            </label>
-                            <input
-                              type="text"
-                              name="name"
-                              value={pixForm.name}
-                              onChange={handlePixChange}
-                              placeholder="Digite seu nome completo"
-                              className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-minecraft-green focus:ring-2 focus:ring-minecraft-green/20 transition-colors"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              CPF
-                            </label>
-                            <input
-                              type="text"
-                              name="cpf"
-                              value={formatCPF(pixForm.cpf)}
-                              onChange={handlePixChange}
-                              maxLength={14}
-                              placeholder="000.000.000-00"
-                              className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-minecraft-green focus:ring-2 focus:ring-minecraft-green/20 transition-colors"
-                            />
-                          </div>
-                        </div>
-                        <button
-                          onClick={generatePixQRCode}
-                          disabled={!isPixFormValid()}
-                          className={`w-full mt-4 px-6 py-3 rounded-lg transition-colors shadow-minecraft hover:shadow-minecraft-lg ${
-                            isPixFormValid()
-                              ? 'bg-minecraft-green text-white hover:bg-minecraft-light'
-                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          }`}
-                        >
-                          Gerar QR Code PIX
-                        </button>
-                      </>
-                    ) : (
-                      <div className="text-center space-y-4">
-                        <div className="bg-white p-4 rounded-lg inline-block">
-                          <QRCodeSVG
-                            value={pixForm.qrCode}
-                            size={200}
-                            level="H"
-                            includeMargin={true}
-                          />
-                        </div>
-                        <div>
-                          <p className="text-lg font-bold text-minecraft-green">Valor: R$ {total.toFixed(2)}</p>
-                          <p className="text-sm text-gray-600">Escaneie o QR Code com seu aplicativo de banco</p>
-                        </div>
-                        <button
-                          onClick={() => setPixForm(prev => ({ ...prev, qrCode: undefined }))}
-                          className="text-minecraft-green hover:text-minecraft-light transition-colors"
-                        >
-                          Gerar novo QR Code
-                        </button>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Nome Completo
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={pixForm.name}
+                          onChange={handlePixChange}
+                          placeholder="Digite seu nome completo"
+                          className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-minecraft-green focus:ring-2 focus:ring-minecraft-green/20 transition-colors"
+                        />
                       </div>
-                    )}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          CPF
+                        </label>
+                        <input
+                          type="text"
+                          name="cpf"
+                          value={formatCPF(pixForm.cpf)}
+                          onChange={handlePixChange}
+                          maxLength={14}
+                          placeholder="000.000.000-00"
+                          className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-minecraft-green focus:ring-2 focus:ring-minecraft-green/20 transition-colors"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={generatePixQRCode}
+                      disabled={!isPixFormValid()}
+                      className={`w-full mt-4 px-6 py-3 rounded-lg transition-colors shadow-minecraft hover:shadow-minecraft-lg ${
+                        isPixFormValid()
+                          ? 'bg-minecraft-green text-white hover:bg-minecraft-light'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      Gerar QR Code PIX
+                    </button>
+                  </motion.div>
+                )}
+
+                {showQrCode && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center space-y-4"
+                  >
+                    <div className="bg-white p-4 rounded-lg inline-block">
+                      <QRCodeSVG
+                        value={pixForm.qrCode || ''}
+                        size={200}
+                        level="H"
+                        includeMargin={true}
+                      />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-minecraft-green">Valor: R$ {total.toFixed(2)}</p>
+                      <p className="text-sm text-gray-600">Escaneie o QR Code com seu aplicativo de banco</p>
+                    </div>
+                    <button
+                      onClick={() => setPixForm(prev => ({ ...prev, qrCode: undefined }))}
+                      className="text-minecraft-green hover:text-minecraft-light transition-colors"
+                    >
+                      Gerar novo QR Code
+                    </button>
                   </motion.div>
                 )}
 
                 <button
-                  onClick={handleSubmit}
+                  onClick={handlePayment}
                   disabled={!selectedMethod ||
                     (selectedMethod === 'credit' && !isCreditCardFormValid()) ||
                     (selectedMethod === 'pix' && !pixForm.qrCode)}

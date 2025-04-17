@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -14,35 +14,35 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, senha: string) => Promise<void>;
-  register: (nome: string, email: string, senha: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Verificar se há um usuário salvo no localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    // Verifica se há um usuário salvo no localStorage
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
     }
     setLoading(false);
   }, []);
 
-  const login = async (email: string, senha: string) => {
+  const login = async (email: string, password: string) => {
     try {
-      // Aqui você faria a chamada para sua API
-      // Por enquanto, vamos simular uma resposta
-      const mockUser = {
+      // Aqui você faria a chamada para sua API de autenticação
+      // Por enquanto, vamos simular um login bem-sucedido
+      const mockUser: User = {
         id: '1',
         nome: 'Usuário Teste',
-        email,
+        email: email,
         avatar: '👤',
         rank: 'Nemo'
       };
@@ -52,18 +52,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push('/dashboard');
     } catch (error) {
       console.error('Erro ao fazer login:', error);
-      throw error;
+      throw new Error('Falha ao fazer login. Verifique suas credenciais.');
     }
   };
 
-  const register = async (nome: string, email: string, senha: string) => {
+  const register = async (name: string, email: string, password: string) => {
     try {
-      // Aqui você faria a chamada para sua API
-      // Por enquanto, vamos simular uma resposta
-      const mockUser = {
+      // Aqui você faria a chamada para sua API de registro
+      // Por enquanto, vamos simular um registro bem-sucedido
+      const mockUser: User = {
         id: '1',
-        nome,
-        email,
+        nome: name,
+        email: email,
         avatar: '👤',
         rank: 'Nemo'
       };
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push('/dashboard');
     } catch (error) {
       console.error('Erro ao registrar:', error);
-      throw error;
+      throw new Error('Falha ao registrar. Tente novamente.');
     }
   };
 
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }
