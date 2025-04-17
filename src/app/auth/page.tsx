@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { signIn } from 'next-auth/react';
 
 type AuthMode = 'login' | 'register';
 
@@ -38,160 +39,30 @@ export default function AuthPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-minecraft-light to-minecraft-green/10 py-16">
-      <div className="container mx-auto px-4">
-        <div className="max-w-md mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="card p-8"
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-minecraft-light to-minecraft-green/10">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full"
+      >
+        <h1 className="text-3xl font-bold text-minecraft-green text-center mb-8">
+          Entrar
+        </h1>
+        <button
+          onClick={() => signIn('discord')}
+          className="w-full flex items-center justify-center gap-4 px-6 py-3 bg-[#5865F2] text-white rounded-lg hover:bg-[#4752C4] transition-colors"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            <div className="flex justify-center mb-8">
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => setMode('login')}
-                  className={`px-6 py-2 rounded-lg font-bold transition-colors ${
-                    mode === 'login'
-                      ? 'bg-minecraft-green text-white'
-                      : 'bg-white text-minecraft-green border-2 border-minecraft-green hover:bg-minecraft-green hover:text-white'
-                  }`}
-                >
-                  Login
-                </button>
-                <button
-                  onClick={() => setMode('register')}
-                  className={`px-6 py-2 rounded-lg font-bold transition-colors ${
-                    mode === 'register'
-                      ? 'bg-minecraft-green text-white'
-                      : 'bg-white text-minecraft-green border-2 border-minecraft-green hover:bg-minecraft-green hover:text-white'
-                  }`}
-                >
-                  Registrar
-                </button>
-              </div>
-            </div>
-
-            <h2 className="text-2xl font-minecraft text-minecraft-green text-center mb-6">
-              {mode === 'login' ? 'Bem-vindo de volta!' : 'Crie sua conta'}
-            </h2>
-
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <span className="block sm:inline">{error}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {mode === 'register' && (
-                <div>
-                  <label className="block text-gray-700 mb-2">Nome</label>
-                  <input
-                    type="text"
-                    value={formData.nome}
-                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                    className="w-full px-4 py-2 border-2 border-minecraft-gray rounded-lg focus:outline-none focus:border-minecraft-green"
-                    required
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="block text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-minecraft-gray rounded-lg focus:outline-none focus:border-minecraft-green"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-gray-700 mb-2">Senha</label>
-                <input
-                  type="password"
-                  value={formData.senha}
-                  onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
-                  className="w-full px-4 py-2 border-2 border-minecraft-gray rounded-lg focus:outline-none focus:border-minecraft-green"
-                  required
-                />
-              </div>
-
-              {mode === 'register' && (
-                <div>
-                  <label className="block text-gray-700 mb-2">Confirmar Senha</label>
-                  <input
-                    type="password"
-                    value={formData.confirmarSenha}
-                    onChange={(e) => setFormData({ ...formData, confirmarSenha: e.target.value })}
-                    className="w-full px-4 py-2 border-2 border-minecraft-gray rounded-lg focus:outline-none focus:border-minecraft-green"
-                    required
-                  />
-                </div>
-              )}
-
-              {mode === 'login' && (
-                <div className="flex justify-end">
-                  <Link
-                    href="/recuperar-senha"
-                    className="text-minecraft-green hover:underline text-sm"
-                  >
-                    Esqueceu a senha?
-                  </Link>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="w-full btn-primary text-lg py-3"
-              >
-                {mode === 'login' ? 'Entrar' : 'Registrar'}
-              </button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-gray-600">
-                {mode === 'login' ? 'Não tem uma conta?' : 'Já tem uma conta?'}{' '}
-                <button
-                  onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-                  className="text-minecraft-green hover:underline font-bold"
-                >
-                  {mode === 'login' ? 'Registre-se' : 'Faça login'}
-                </button>
-              </p>
-            </div>
-
-            <div className="mt-8">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Ou continue com</span>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-minecraft-gray rounded-lg hover:bg-minecraft-green/10 transition-colors"
-                >
-                  <span className="text-2xl">🎮</span>
-                  <span>Minecraft</span>
-                </button>
-                <button
-                  type="button"
-                  className="flex items-center justify-center gap-2 px-4 py-2 border-2 border-minecraft-gray rounded-lg hover:bg-minecraft-green/10 transition-colors"
-                >
-                  <span className="text-2xl">💬</span>
-                  <span>Discord</span>
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </div>
+            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z" />
+          </svg>
+          Entrar com Discord
+        </button>
+      </motion.div>
     </main>
   );
 }
